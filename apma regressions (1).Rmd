@@ -1,0 +1,269 @@
+---
+title: "apma seminar regressions"
+output: html_document
+date: '2023-04-21'
+---
+```{r}
+library(dplyr)
+library(lme4) 
+library(lmerTest)
+```
+
+```{r}
+
+#Frequency
+
+data <- read.csv("data//frequencymerged.csv")
+
+educregression <- data%>%
+  select(Country,Frequency, Year, Adolescent,female_education.csv,Income.level,Adult,total.fertility.rate.csv, Continent) 
+
+s <- data
+complete_rows <- complete.cases(s)
+s <- s[complete_rows, ]
+
+#keep countries that only have at least 5 occurences
+s <- s%>%
+  filter(!Country %in% c("Afghanistan", "Algeria", "Angola", "Antigua and Barbuda", "Comoros", "Democratic Republic of the Congo", "Fiji", "Gabon", "Gambia", "Grenada", "Honduras", "Iraq", "Maldives", "Myanmar", "Namibia", "Nigeria", "Puerto Rico", "Sierra Leone", "Somalia", "Timor-Leste", "Turkmenistan", "United Arab Emirates"))
+
+
+s$f_Country<-as.factor(s$Country)
+s$f_income<-as.factor(s$Income.level)
+names(s)[names(s) == "Adolescent"] <- "Adolescent_Birth_Rate"
+
+#signifincant only for adolescent birth rate
+
+model1 <-lmer(Adolescent_Birth_Rate~Frequency+Year+(1|f_Country)+f_income+Year:f_income+female_education.csv + Frequency:f_income ,data=s) 
+
+summary(model1)
+
+#the income levels are sequential, income level 3 and 4 are increasing as opposed to income level 1 and 2
+
+#the coefficient does not tell you the information directly, it's the interaction between both variables
+
+#make more interaction terms with income, see whether the results change 
+
+#in the results and discussion, focus on the research question
+
+```
+
+```{r}
+
+#Intensity
+
+data <- read.csv("data\\TotalAffected2regression.csv")
+
+educregression <- data%>%
+  select(Country, Year, Adolescent,female_education.csv,Income.level,Total.Affected) 
+
+s <- data
+complete_rows <- complete.cases(s)
+s <- s[complete_rows, ]
+
+s <- s%>%filter(!Country %in% c("Somalia", "Sierra Leone", "Honduras", "Democratic Republic of the Congo", "Antigua and Barbuda", "Angola","Fiji","Gabon", "Gambia", "Myanmar", "Namibia", "Nigeria"))
+
+s$f_Country<-as.factor(s$Country)
+s$f_income<-as.factor(s$Income.level)
+names(s)[names(s) == "Adolescent"] <- "Adolescent_Birth_Rate"
+
+#signifincant only for adolescent birth rate
+
+model1 <-lmer(Adolescent_Birth_Rate~Total.Affected+Year+(1|f_Country)+f_income+Year:f_income+female_education.csv+ Total.Affected:f_income,data=s) 
+
+summary(model1)
+
+#income levels 3 and 4 are better than income levels 1 and 2
+#normalize the variables that are not categorical (continuous, keep the year) 
+#combined impact of year and income, some countries see progress and others don't
+
+```
+
+
+
+```{r}
+
+regression <- function(i){
+
+  flood_intensity <- read.csv(paste0("data//", i), stringsAsFactors = FALSE)
+  
+  regression1 <- flood_intensity%>%
+    select(Country,Total.Affected, Year, Adolescent,female_education.csv,Income.level)
+  
+  
+  #regression1$percent <- (regression1$Total.Affected/regression1$population.csv)*100
+  
+  complete_rows <- complete.cases(regression1)
+  s <- regression1[complete_rows, ]
+  s <- s %>% filter(!Country%in% c("Vietnam"))
+  
+  
+  s$f_Country<-as.factor(s$Country)
+  s$f_income<-as.factor(s$Income.level)
+  names(s)[names(s) == "Adolescent"] <- "Adolescent_Birth_Rate"
+  
+  #signifincant only for adolescent birth rate
+  
+  
+  model1 <-lmer(Adolescent_Birth_Rate~Total.Affected+Year+(1|f_Country)+
+                f_income+Year:f_income+female_education.csv,data=s) 
+  return(summary(model1))
+
+}
+
+vec <- c("Floods1.csv","Floods2.csv", "Floods3.csv","Floods4.csv", "Floods5.csv")
+regression_results <- list()
+count <- 0
+
+for(i in vec){
+  result <- regression(i)
+  print(result)
+  
+}
+
+
+
+```
+
+```{r}
+
+drought_intensity <- read.csv("data//DROUGHT_REGRESSION_1.csv") #signficant at incomes 2,3,4
+
+regression1 <- drought_intensity%>%
+  select(Country,Total.Affected, Year, Adolescent,female_education.csv,Income.level,population.csv)
+
+
+regression1$percent <- (regression1$Total.Affected/regression1$population.csv)*100
+
+complete_rows <- complete.cases(regression1)
+s <- regression1[complete_rows, ]
+s <- s %>% filter(!Country%in% c("Vietnam"))
+
+
+
+s$f_Country<-as.factor(s$Country)
+s$f_income<-as.factor(s$Income.level)
+names(s)[names(s) == "Adolescent"] <- "Adolescent_Birth_Rate"
+
+
+#signifincant only for adolescent birth rate
+s <- s%>%filter(f_income %in% c(2,3,4))
+
+model1 <-lmer(Adolescent_Birth_Rate~percent+Year+(1|f_Country)+
+              f_income+Year:f_income+female_education.csv,data=s) 
+summary(model1)
+
+
+```
+
+```{r}
+
+storm_intensity <- read.csv("data//STORM_REGRESSION_1.csv")
+
+regression1 <- storm_intensity%>%
+  select(Country,Total.Affected, Year, Adolescent,female_education.csv,Income.level,population.csv)
+
+
+regression1$percent <- (regression1$Total.Affected/regression1$population.csv)*100
+
+complete_rows <- complete.cases(regression1)
+s <- regression1[complete_rows, ]
+s%>%count(Country)
+
+s <- s %>% filter(!Country%in% c("Vietnam"))
+
+s$f_Country<-as.factor(s$Country)
+s$f_income<-as.factor(s$Income.level)
+names(s)[names(s) == "Adolescent"] <- "Adolescent_Birth_Rate"
+
+
+model1 <-lmer(Adolescent_Birth_Rate~percent+Year+(1|f_Country)+
+              f_income+Year:f_income+female_education.csv,data=s) 
+summary(model1)
+
+```
+
+```{r}
+
+wildfire_intensity <- read.csv("data//WILDFIRE_REGRESSION_1.csv")
+
+regression1 <- wildfire_intensity%>%
+  select(Country,Total.Affected, Year, Adolescent,female_education.csv,Income.level,population.csv)
+
+
+regression1$percent <- (regression1$Total.Affected/regression1$population.csv)*100
+
+complete_rows <- complete.cases(regression1)
+s <- regression1[complete_rows, ]
+s <- s %>% filter(!Country%in% c("Vietnam"))
+
+
+s$f_Country<-as.factor(s$Country)
+s$f_income<-as.factor(s$Income.level)
+names(s)[names(s) == "Adolescent"] <- "Adolescent_Birth_Rate"
+
+#signifincant only for adolescent birth rate
+
+model1 <-lmer(Adolescent_Birth_Rate~percent+Year+(1|f_Country)+
+              f_income+Year:f_income+female_education.csv,data=s) 
+summary(model1)
+
+```
+
+```{r}
+
+extreme_temp_intensity <- read.csv("data//EXTREME_TEMP_REGRESSION_1.csv") #Not enough data
+
+regression1 <- extreme_temp_intensity%>%
+  select(Country,Total.Affected, Year, Adolescent,female_education.csv,Income.level,population.csv)
+
+
+regression1$percent <- (regression1$Total.Affected/regression1$population.csv)*100
+
+complete_rows <- complete.cases(regression1)
+s <- regression1[complete_rows, ]
+s <- s %>% filter(!Country%in% c("Belarus"))
+
+
+s$f_Country<-as.factor(s$Country)
+s$f_income<-as.factor(s$Income.level)
+names(s)[names(s) == "Adolescent"] <- "Adolescent_Birth_Rate"
+
+#signifincant only for adolescent birth rate
+
+model1 <-lmer(Adolescent_Birth_Rate~percent+Year+(1|f_Country)+
+              f_income+Year:f_income+female_education.csv,data=s) 
+summary(model1)
+
+
+```
+
+```{r}
+
+landslide_intensity <- read.csv("data//LANDSLIDE_REGRESSION_1.csv") 
+
+regression1 <- landslide_intensity %>%
+  select(Country,Total.Affected, Year, Adolescent,female_education.csv,Income.level,population.csv)
+
+
+regression1$percent <- (regression1$Total.Affected/regression1$population.csv)*100
+
+complete_rows <- complete.cases(regression1)
+s <- regression1[complete_rows, ]
+s <- s %>% filter(!Country%in% c("Vietnam"))
+
+s$percent <- scale(s$percent)
+
+
+s$f_Country<-as.factor(s$Country)
+s$f_income<-as.factor(s$Income.level)
+names(s)[names(s) == "Adolescent"] <- "Adolescent_Birth_Rate"
+
+#signifincant only for adolescent birth rate
+
+
+model1 <-lmer(Adolescent_Birth_Rate~percent+Year+(1|f_Country)+
+              f_income+Year:f_income+female_education.csv,data=s) 
+summary(model1)
+
+```
+
