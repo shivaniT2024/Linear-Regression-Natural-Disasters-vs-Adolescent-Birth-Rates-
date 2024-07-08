@@ -1,0 +1,56 @@
+---
+title: "total affected imputation"
+output: html_document
+date: '2023-07-05'
+---
+
+
+```{r}
+library(Amelia)
+library(dplyr)
+library(ggplot2)
+library(data.table)
+```
+
+```{r}
+a <- read.csv("data//totalaffected.csv")
+a <- a%>% select(Total.Affected,Year,Country)%>%filter(Year>1969)%>%filter(Year<2021)
+
+result <- a %>%
+  group_by(Country) %>%
+  summarize(NA_Percentage = mean(is.na(Total.Affected)) * 100)
+
+y <- result%>%filter(NA_Percentage>20)
+
+c <- a %>% count(Country)
+b <- c%>% filter(n <5)%>%select(Country)
+
+a <- a %>%filter(!Country %in% c(b$Country,y$Country))
+```
+
+```{r}
+confound <- amelia(a, ts = "Year", cs = "Country", polytime = 1, parallel = "snow",
+                   ncpus = getOption("amelia.ncpus", 8L),logs=c('Total.Affected'))
+```
+```{r}
+tscsPlot(confound, cs = "Kiribati", var = "Total.Affected", xlim = c(1970, 2020),
+ main = "Colombia Total Affected")
+```
+
+
+```{r}
+
+t <- confound$imputation[[1]]
+g<- confound$imputation[[2]]
+h<- confound$imputation[[3]]
+j<- confound$imputation[[4]]
+k<- confound$imputation[[5]]
+
+write.csv(t,"C:\\Users\\Shivani Tripathi\\Documents\\R lectures\\Data\\totalaffectedimputation1.csv", row.names = FALSE)
+write.csv(g,"C:\\Users\\Shivani Tripathi\\Documents\\R lectures\\Data\\totalaffectedimputation2.csv", row.names = FALSE)
+write.csv(h,"C:\\Users\\Shivani Tripathi\\Documents\\R lectures\\Data\\totalaffectedimputation3.csv", row.names = FALSE)
+write.csv(j,"C:\\Users\\Shivani Tripathi\\Documents\\R lectures\\Data\\totalaffectedimputation4.csv", row.names = FALSE)
+write.csv(k,"C:\\Users\\Shivani Tripathi\\Documents\\R lectures\\Data\\totalaffectedimputation5.csv", row.names = FALSE)
+
+```
+
